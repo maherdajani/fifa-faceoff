@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useGame } from '@/context/GameContext';
-import { Check, ArrowLeft, RefreshCw, Shuffle, Search, ChevronDown } from "lucide-react";
+import { Check, ArrowLeft, RefreshCw, Shuffle, Search } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Player } from '@/types';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Select,
   SelectContent,
@@ -33,11 +33,17 @@ const MatchSetup: React.FC = () => {
     winRate: 0
   };
   
-  const [player1, setPlayer1] = useState<Player>(selectedPlayers[0] || defaultPlayer);
-  const [player2, setPlayer2] = useState<Player>(selectedPlayers[1] || defaultPlayer);
+  const [player1, setPlayer1] = useState<Player | null>(selectedPlayers[0] || null);
+  const [player2, setPlayer2] = useState<Player | null>(selectedPlayers[1] || null);
   const [player1Score, setPlayer1Score] = useState<string>('');
   const [player2Score, setPlayer2Score] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [formErrors, setFormErrors] = useState({
+    player1: false,
+    player2: false,
+    player1Score: false,
+    player2Score: false,
+  });
   
   const { currentGameSession, addMatchResult, players } = useGame();
   const navigate = useNavigate();
@@ -47,14 +53,30 @@ const MatchSetup: React.FC = () => {
     player.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Validate the form before submission
+  const validateForm = () => {
+    const errors = {
+      player1: !player1?.id,
+      player2: !player2?.id,
+      player1Score: !player1Score.trim(),
+      player2Score: !player2Score.trim(),
+    };
+    
+    setFormErrors(errors);
+    
+    return !Object.values(errors).some(error => error);
+  };
+
   // Handle player selection
   const handlePlayer1Change = (playerId: string) => {
     const selectedPlayer = players.find(p => p.id === playerId);
     if (selectedPlayer) {
       setPlayer1(selectedPlayer);
+      setFormErrors(prev => ({ ...prev, player1: false }));
+      
       // If both players are the same, reset player 2
-      if (selectedPlayer.id === player2.id) {
-        setPlayer2(defaultPlayer);
+      if (player2 && selectedPlayer.id === player2.id) {
+        setPlayer2(null);
       }
     }
   };
@@ -63,11 +85,23 @@ const MatchSetup: React.FC = () => {
     const selectedPlayer = players.find(p => p.id === playerId);
     if (selectedPlayer) {
       setPlayer2(selectedPlayer);
+      setFormErrors(prev => ({ ...prev, player2: false }));
+      
       // If both players are the same, reset player 1
-      if (selectedPlayer.id === player1.id) {
-        setPlayer1(defaultPlayer);
+      if (player1 && selectedPlayer.id === player1.id) {
+        setPlayer1(null);
       }
     }
+  };
+
+  const handlePlayer1ScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPlayer1Score(e.target.value);
+    setFormErrors(prev => ({ ...prev, player1Score: false }));
+  };
+
+  const handlePlayer2ScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPlayer2Score(e.target.value);
+    setFormErrors(prev => ({ ...prev, player2Score: false }));
   };
 
   // Check if we have any players at the beginning
@@ -104,13 +138,41 @@ const MatchSetup: React.FC = () => {
     setPlayer2(shuffled[1]);
     setPlayer1Score('');
     setPlayer2Score('');
+    setFormErrors({
+      player1: false,
+      player2: false,
+      player1Score: true,
+      player2Score: true,
+    });
   };
 
   const handleSubmit = () => {
-    if (!player1?.id || !player2?.id || !player1Score || !player2Score || !currentGameSession) {
+    // Validate all fields
+    if (!validateForm()) {
       toast({
         title: "Missing information",
         description: "Please make sure all fields are filled correctly.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Check if currentGameSession exists
+    if (!currentGameSession) {
+      toast({
+        title: "No active game session",
+        description: "There is no active game session. Please create one first.",
+        variant: "destructive"
+      });
+      navigate('/');
+      return;
+    }
+
+    // Ensure player objects exist
+    if (!player1 || !player2) {
+      toast({
+        title: "Players not selected",
+        description: "Please select both players before saving the match.",
         variant: "destructive"
       });
       return;
@@ -196,76 +258,18 @@ const MatchSetup: React.FC = () => {
       )}
       
       <div className="fifa-card mb-6">
-        <h2 className="text-lg font-medium mb-4">Quick Match Setup</h2>
-        
-        <div className="mb-6">
-          <p className="text-sm text-muted-foreground mb-3">Recent Players</p>
-          <div className="relative mb-4">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search players..."
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex gap-3 overflow-x-auto py-2">
-            {filteredPlayers.length > 0 ? (
-              filteredPlayers.slice(0, 6).map(player => (
-                <div 
-                  key={player.id}
-                  className="flex flex-col items-center min-w-[4rem]"
-                >
-                  <Avatar className="h-12 w-12 mb-1">
-                    {player.photoUrl ? (
-                      <img src={player.photoUrl} alt={player.name} />
-                    ) : (
-                      <AvatarFallback className="bg-fifa-blue text-white">
-                        {getInitials(player.name)}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <span className="text-xs">{player.name}</span>
-                </div>
-              ))
-            ) : (
-              <div className="w-full text-center py-2 text-sm text-muted-foreground">
-                No players found
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex gap-3 mb-4">
-          <Button 
-            variant="outline"
-            className="flex-1 text-xs h-9"
-            onClick={handleRematch}
-          >
-            <RefreshCw className="h-3 w-3 mr-1" /> Rematch Last
-          </Button>
-          <Button 
-            variant="outline"
-            className="flex-1 text-xs h-9"
-            onClick={handleRandomMatch}
-          >
-            <Shuffle className="h-3 w-3 mr-1" /> Random Match
-          </Button>
-        </div>
-      </div>
-
-      <div className="fifa-card mb-6">
         <h2 className="text-lg font-medium mb-4">Select Players</h2>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
-            <label className="block text-sm font-medium mb-2">Player 1</label>
+            <label className={`block text-sm font-medium mb-2 ${formErrors.player1 ? 'text-red-500' : ''}`}>
+              Player 1 *
+            </label>
             <Select
               value={player1?.id || ""}
               onValueChange={handlePlayer1Change}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className={`w-full ${formErrors.player1 ? 'border-red-500 ring-red-200' : ''}`}>
                 <SelectValue placeholder="Select Player 1" />
               </SelectTrigger>
               <SelectContent>
@@ -273,21 +277,26 @@ const MatchSetup: React.FC = () => {
                   <SelectItem 
                     key={player.id} 
                     value={player.id}
-                    disabled={player.id === player2?.id}
+                    disabled={player2?.id === player.id}
                   >
                     {player.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {formErrors.player1 && (
+              <p className="text-red-500 text-xs mt-1">Player 1 is required</p>
+            )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">Player 2</label>
+            <label className={`block text-sm font-medium mb-2 ${formErrors.player2 ? 'text-red-500' : ''}`}>
+              Player 2 *
+            </label>
             <Select
               value={player2?.id || ""}
               onValueChange={handlePlayer2Change}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className={`w-full ${formErrors.player2 ? 'border-red-500 ring-red-200' : ''}`}>
                 <SelectValue placeholder="Select Player 2" />
               </SelectTrigger>
               <SelectContent>
@@ -295,13 +304,16 @@ const MatchSetup: React.FC = () => {
                   <SelectItem 
                     key={player.id} 
                     value={player.id}
-                    disabled={player.id === player1?.id}
+                    disabled={player1?.id === player.id}
                   >
                     {player.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {formErrors.player2 && (
+              <p className="text-red-500 text-xs mt-1">Player 2 is required</p>
+            )}
           </div>
         </div>
 
@@ -310,7 +322,7 @@ const MatchSetup: React.FC = () => {
             {player1?.id ? (
               <>
                 <Avatar className="h-20 w-20 mb-2">
-                  {player1?.photoUrl ? (
+                  {player1.photoUrl ? (
                     <img src={player1.photoUrl} alt={player1.name} />
                   ) : (
                     <AvatarFallback className="text-2xl bg-fifa-blue text-white">
@@ -335,7 +347,7 @@ const MatchSetup: React.FC = () => {
             {player2?.id ? (
               <>
                 <Avatar className="h-20 w-20 mb-2">
-                  {player2?.photoUrl ? (
+                  {player2.photoUrl ? (
                     <img src={player2.photoUrl} alt={player2.name} />
                   ) : (
                     <AvatarFallback className="text-2xl bg-fifa-blue text-white">
@@ -355,31 +367,54 @@ const MatchSetup: React.FC = () => {
 
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              {player1?.id ? `${player1.name}'s Score` : "Player 1 Score"}
+            <label className={`block text-sm font-medium mb-1 ${formErrors.player1Score ? 'text-red-500' : ''}`}>
+              {player1?.id ? `${player1.name}'s Score *` : "Player 1 Score *"}
             </label>
             <Input
               type="number"
               min="0"
               value={player1Score}
-              onChange={(e) => setPlayer1Score(e.target.value)}
-              className="text-center text-lg"
+              onChange={handlePlayer1ScoreChange}
+              className={`text-center text-lg ${formErrors.player1Score ? 'border-red-500 ring-red-200' : ''}`}
               disabled={!player1?.id}
             />
+            {formErrors.player1Score && (
+              <p className="text-red-500 text-xs mt-1">Score is required</p>
+            )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">
-              {player2?.id ? `${player2.name}'s Score` : "Player 2 Score"}
+            <label className={`block text-sm font-medium mb-1 ${formErrors.player2Score ? 'text-red-500' : ''}`}>
+              {player2?.id ? `${player2.name}'s Score *` : "Player 2 Score *"}
             </label>
             <Input
               type="number"
               min="0"
               value={player2Score}
-              onChange={(e) => setPlayer2Score(e.target.value)}
-              className="text-center text-lg"
+              onChange={handlePlayer2ScoreChange}
+              className={`text-center text-lg ${formErrors.player2Score ? 'border-red-500 ring-red-200' : ''}`}
               disabled={!player2?.id}
             />
+            {formErrors.player2Score && (
+              <p className="text-red-500 text-xs mt-1">Score is required</p>
+            )}
           </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <Button 
+            variant="outline"
+            className="flex-1 text-xs h-9"
+            onClick={handleRematch}
+          >
+            <RefreshCw className="h-3 w-3 mr-1" /> Rematch
+          </Button>
+          <Button 
+            variant="outline"
+            className="flex-1 text-xs h-9"
+            onClick={handleRandomMatch}
+          >
+            <Shuffle className="h-3 w-3 mr-1" /> Random Match
+          </Button>
         </div>
 
         <div className="mt-4">

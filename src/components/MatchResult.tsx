@@ -1,26 +1,51 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useGame } from '@/context/GameContext';
-import { ArrowLeft, Check, Clock, Home } from "lucide-react";
+import { ArrowLeft, Check, Home } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
 
 const MatchResult: React.FC = () => {
   const location = useLocation();
   const { matchId } = location.state || { matchId: null };
   const { matchResults, confirmMatchResult } = useGame();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const match = matchResults.find(m => m.id === matchId);
+
+  useEffect(() => {
+    // Validate that we have a valid match
+    if (!matchId || !match) {
+      toast({
+        title: "Match Not Found",
+        description: "The match you're looking for doesn't exist or has been removed.",
+        variant: "destructive"
+      });
+      
+      // Small delay to ensure toast is seen before redirecting
+      const timer = setTimeout(() => {
+        navigate('/');
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [matchId, match, navigate, toast]);
 
   if (!match) {
     return (
       <div className="container max-w-md mx-auto px-4 py-8">
         <div className="fifa-card">
           <h2 className="text-lg font-medium mb-4">Match Not Found</h2>
-          <Button onClick={() => navigate('/')}>Return Home</Button>
+          <p className="text-muted-foreground mb-4">
+            The match you're looking for doesn't exist or has been removed.
+          </p>
+          <Button onClick={() => navigate('/')} className="w-full">
+            Return Home
+          </Button>
         </div>
       </div>
     );
@@ -31,7 +56,7 @@ const MatchResult: React.FC = () => {
   };
 
   const getInitials = (name: string) => {
-    return name.charAt(0).toUpperCase();
+    return name?.charAt(0)?.toUpperCase() || '';
   };
 
   const winner = match.player1Score > match.player2Score ? match.player1 : 
@@ -72,11 +97,15 @@ const MatchResult: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div className="flex flex-col items-center">
             <Avatar className="h-16 w-16 mb-2">
-              <AvatarFallback className="text-xl bg-fifa-blue text-white">
-                {getInitials(match.player1.name)}
-              </AvatarFallback>
+              {match.player1?.photoUrl ? (
+                <img src={match.player1.photoUrl} alt={match.player1.name} />
+              ) : (
+                <AvatarFallback className="text-xl bg-fifa-blue text-white">
+                  {getInitials(match.player1?.name || '')}
+                </AvatarFallback>
+              )}
             </Avatar>
-            <span className="text-sm">{match.player1.name}</span>
+            <span className="text-sm">{match.player1?.name}</span>
             <span className="text-3xl font-bold mt-2">{match.player1Score}</span>
           </div>
 
@@ -86,11 +115,15 @@ const MatchResult: React.FC = () => {
 
           <div className="flex flex-col items-center">
             <Avatar className="h-16 w-16 mb-2">
-              <AvatarFallback className="text-xl bg-fifa-blue text-white">
-                {getInitials(match.player2.name)}
-              </AvatarFallback>
+              {match.player2?.photoUrl ? (
+                <img src={match.player2.photoUrl} alt={match.player2.name} />
+              ) : (
+                <AvatarFallback className="text-xl bg-fifa-blue text-white">
+                  {getInitials(match.player2?.name || '')}
+                </AvatarFallback>
+              )}
             </Avatar>
-            <span className="text-sm">{match.player2.name}</span>
+            <span className="text-sm">{match.player2?.name}</span>
             <span className="text-3xl font-bold mt-2">{match.player2Score}</span>
           </div>
         </div>
@@ -103,10 +136,10 @@ const MatchResult: React.FC = () => {
               <div className="flex items-center">
                 <Avatar className="h-6 w-6 mr-2">
                   <AvatarFallback className="text-xs bg-fifa-blue text-white">
-                    {getInitials(match.player1.name)}
+                    {getInitials(match.player1?.name || '')}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm">{match.player1.name}</span>
+                <span className="text-sm">{match.player1?.name}</span>
               </div>
               {match.player1Confirmed ? (
                 <Badge className="bg-green-100 hover:bg-green-100 text-green-800 border-green-200">
@@ -117,7 +150,7 @@ const MatchResult: React.FC = () => {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => handleConfirm(match.player1.id)}
+                  onClick={() => handleConfirm(match.player1?.id || '')}
                 >
                   Confirm
                 </Button>
@@ -128,10 +161,10 @@ const MatchResult: React.FC = () => {
               <div className="flex items-center">
                 <Avatar className="h-6 w-6 mr-2">
                   <AvatarFallback className="text-xs bg-fifa-blue text-white">
-                    {getInitials(match.player2.name)}
+                    {getInitials(match.player2?.name || '')}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm">{match.player2.name}</span>
+                <span className="text-sm">{match.player2?.name}</span>
               </div>
               {match.player2Confirmed ? (
                 <Badge className="bg-green-100 hover:bg-green-100 text-green-800 border-green-200">
@@ -142,7 +175,7 @@ const MatchResult: React.FC = () => {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs"
-                  onClick={() => handleConfirm(match.player2.id)}
+                  onClick={() => handleConfirm(match.player2?.id || '')}
                 >
                   Confirm
                 </Button>
@@ -171,10 +204,10 @@ const MatchResult: React.FC = () => {
         <div className="fifa-card mb-6">
           <h3 className="text-lg font-medium mb-2">Confirmation Required</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Please confirm the score for your match against {match.player1.name}. Once confirmed, the score cannot be changed.
+            Please confirm the score for this match. Once confirmed, the score cannot be changed.
           </p>
           
-          {!match.player1Confirmed && (
+          {!match.player1Confirmed && match.player1?.id && (
             <Button
               className="w-full mb-4"
               onClick={() => handleConfirm(match.player1.id)}
@@ -183,7 +216,7 @@ const MatchResult: React.FC = () => {
             </Button>
           )}
           
-          {!match.player2Confirmed && (
+          {!match.player2Confirmed && match.player2?.id && (
             <Button
               className="w-full"
               onClick={() => handleConfirm(match.player2.id)}
