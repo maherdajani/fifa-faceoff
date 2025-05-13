@@ -1,5 +1,3 @@
 
-import { useToast as useShadcnToast, toast as shadcnToast } from "@/components/ui/use-toast";
-
-export const useToast = useShadcnToast;
-export const toast = shadcnToast;
+// Re-export use-toast from UI components
+export { useToast, toast } from "@/components/ui/use-toast";
