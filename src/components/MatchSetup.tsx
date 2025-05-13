@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,18 +8,43 @@ import { useGame } from '@/context/GameContext';
 import { Check, ArrowLeft, RefreshCw, Shuffle } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Player } from '@/types';
+import { useToast } from "@/components/ui/use-toast";
 
 const MatchSetup: React.FC = () => {
   const location = useLocation();
-  const { selectedPlayers } = location.state || { selectedPlayers: [] };
+  const { toast } = useToast();
+  const { selectedPlayers = [] } = location.state || { selectedPlayers: [] };
   
-  const [player1, setPlayer1] = useState<Player>(selectedPlayers[0]);
-  const [player2, setPlayer2] = useState<Player>(selectedPlayers[1]);
+  // Use default Player objects if selectedPlayers is empty or undefined
+  const defaultPlayer: Player = {
+    id: '',
+    name: 'Player',
+    wins: 0,
+    losses: 0,
+    goalDifference: 0,
+    matchesPlayed: 0,
+    winRate: 0
+  };
+  
+  const [player1, setPlayer1] = useState<Player>(selectedPlayers[0] || defaultPlayer);
+  const [player2, setPlayer2] = useState<Player>(selectedPlayers[1] || defaultPlayer);
   const [player1Score, setPlayer1Score] = useState<string>('');
   const [player2Score, setPlayer2Score] = useState<string>('');
   
   const { currentGameSession, addMatchResult } = useGame();
   const navigate = useNavigate();
+
+  // Check if we have valid players at the beginning
+  useEffect(() => {
+    if (!selectedPlayers || selectedPlayers.length < 2) {
+      toast({
+        title: "Not enough players",
+        description: "Please select at least 2 players to set up a match.",
+        variant: "destructive"
+      });
+      navigate('/add-players');
+    }
+  }, [selectedPlayers, navigate, toast]);
 
   const handleRematch = () => {
     // Just reset the scores
@@ -28,7 +53,14 @@ const MatchSetup: React.FC = () => {
   };
 
   const handleRandomMatch = () => {
-    if (selectedPlayers.length < 2) return;
+    if (selectedPlayers.length < 2) {
+      toast({
+        title: "Not enough players",
+        description: "Please select at least 2 players for a random match.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Shuffle and pick 2 players
     const shuffled = [...selectedPlayers].sort(() => 0.5 - Math.random());
@@ -40,6 +72,11 @@ const MatchSetup: React.FC = () => {
 
   const handleSubmit = () => {
     if (!player1 || !player2 || !player1Score || !player2Score || !currentGameSession) {
+      toast({
+        title: "Missing information",
+        description: "Please make sure all fields are filled correctly.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -47,30 +84,60 @@ const MatchSetup: React.FC = () => {
     const score2 = parseInt(player2Score);
 
     if (isNaN(score1) || isNaN(score2)) {
+      toast({
+        title: "Invalid scores",
+        description: "Please enter valid numeric scores.",
+        variant: "destructive"
+      });
       return;
     }
     
-    const matchResult = addMatchResult({
-      gameSessionId: currentGameSession.id,
-      gameSessionName: currentGameSession.name,
-      player1,
-      player2,
-      player1Score: score1,
-      player2Score: score2,
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().split(' ')[0].substring(0, 5),
-      player1Confirmed: false,
-      player2Confirmed: false,
-    });
-    
-    navigate('/match-result', { state: { matchId: matchResult.id } });
+    try {
+      const matchResult = addMatchResult({
+        gameSessionId: currentGameSession.id,
+        gameSessionName: currentGameSession.name,
+        player1,
+        player2,
+        player1Score: score1,
+        player2Score: score2,
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+        player1Confirmed: false,
+        player2Confirmed: false,
+      });
+      
+      navigate('/match-result', { state: { matchId: matchResult.id } });
+    } catch (error) {
+      console.error("Error adding match result:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong when saving the match. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getInitials = (name: string) => {
-    return name.charAt(0).toUpperCase();
+    return name?.charAt(0)?.toUpperCase() || 'P';
   };
 
-  const canSubmit = player1 && player2 && player1Score !== '' && player2Score !== '';
+  const canSubmit = player1?.id && player2?.id && player1Score !== '' && player2Score !== '';
+
+  // If we don't have enough players, show a loading state or redirect
+  if (!player1?.id || !player2?.id) {
+    return (
+      <div className="container max-w-md mx-auto px-4 py-8 text-center">
+        <h2>Loading players...</h2>
+        <Button 
+          variant="secondary" 
+          onClick={() => navigate('/add-players')}
+          className="mt-4"
+        >
+          Go to Player Selection
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-md mx-auto px-4 py-8">
@@ -142,7 +209,7 @@ const MatchSetup: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col items-center">
             <Avatar className="h-20 w-20 mb-2">
-              {player1.photoUrl ? (
+              {player1?.photoUrl ? (
                 <img src={player1.photoUrl} alt={player1.name} />
               ) : (
                 <AvatarFallback className="text-2xl bg-fifa-blue text-white">
@@ -159,7 +226,7 @@ const MatchSetup: React.FC = () => {
 
           <div className="flex flex-col items-center">
             <Avatar className="h-20 w-20 mb-2">
-              {player2.photoUrl ? (
+              {player2?.photoUrl ? (
                 <img src={player2.photoUrl} alt={player2.name} />
               ) : (
                 <AvatarFallback className="text-2xl bg-fifa-blue text-white">
