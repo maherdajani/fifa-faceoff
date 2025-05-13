@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Player, MatchResult, GameSession, Notification } from "@/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface GameContextType {
   players: Player[];
@@ -12,7 +13,6 @@ interface GameContextType {
   setCurrentGameSession: (session: GameSession | null) => void;
   createGameSession: (name: string) => GameSession;
   addMatchResult: (result: Omit<MatchResult, "id" | "isLocked">) => MatchResult;
-  confirmMatchResult: (matchId: string, playerId: string) => void;
   getPlayer: (id: string) => Player | undefined;
   markNotificationAsRead: (id: string) => void;
   addNotification: (notification: Omit<Notification, "id" | "date" | "isRead">) => void;
@@ -40,61 +40,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (loadedMatchResults) setMatchResults(JSON.parse(loadedMatchResults));
     if (loadedNotifications) setNotifications(JSON.parse(loadedNotifications));
 
-    // Add some sample data if none exists
-    if (!loadedPlayers) {
-      const samplePlayers: Player[] = [
-        { 
-          id: "1", 
-          name: "John", 
-          photoUrl: undefined, 
-          wins: 5, 
-          losses: 2,
-          goalDifference: 8,
-          matchesPlayed: 7,
-          winRate: 0.71
-        },
-        { 
-          id: "2", 
-          name: "Sarah", 
-          photoUrl: undefined, 
-          wins: 3, 
-          losses: 4,
-          goalDifference: -2,
-          matchesPlayed: 7,
-          winRate: 0.43
-        },
-        { 
-          id: "3", 
-          name: "Alex", 
-          photoUrl: undefined, 
-          wins: 6, 
-          losses: 3,
-          goalDifference: 5,
-          matchesPlayed: 9,
-          winRate: 0.67
-        },
-        { 
-          id: "4", 
-          name: "Michael", 
-          photoUrl: undefined, 
-          wins: 8, 
-          losses: 1,
-          goalDifference: 12,
-          matchesPlayed: 9,
-          winRate: 0.89
-        }
-      ];
-      setPlayers(samplePlayers);
-      localStorage.setItem("players", JSON.stringify(samplePlayers));
-
-      const sampleSession: GameSession = {
+    // Create a default FIFA game session if none exists
+    if (!loadedGameSessions || JSON.parse(loadedGameSessions).length === 0) {
+      const defaultSession: GameSession = {
         id: "1",
-        name: "FIFA 2025",
+        name: "FIFA",
         matches: [],
         lastPlayed: new Date().toISOString()
       };
-      setGameSessions([sampleSession]);
-      localStorage.setItem("gameSessions", JSON.stringify([sampleSession]));
+      setGameSessions([defaultSession]);
+      localStorage.setItem("gameSessions", JSON.stringify([defaultSession]));
     }
   }, []);
 
@@ -151,7 +106,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newSession: GameSession = {
       id: Date.now().toString(),
       name,
-      matches: [], // This is correctly typed as string[]
+      matches: [],
       lastPlayed: new Date().toISOString()
     };
 
@@ -165,25 +120,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newResult: MatchResult = {
       ...result,
       id: Date.now().toString(),
-      isLocked: false
+      isLocked: true // Set to true by default since we're removing confirmation
     };
 
     setMatchResults(prev => [...prev, newResult]);
-
-    // Add notification for match confirmation
-    addNotification({
-      type: 'confirmation',
-      title: 'Score Confirmation',
-      message: `Please confirm the score for your match against ${result.player2.name} (${result.player1Score}-${result.player2Score}).`,
-      matchId: newResult.id
-    });
-
-    addNotification({
-      type: 'confirmation',
-      title: 'Score Confirmation',
-      message: `Please confirm the score for your match against ${result.player1.name} (${result.player2Score}-${result.player1Score}).`,
-      matchId: newResult.id
-    });
 
     // Update game session with new match ID
     setGameSessions(prev => 
@@ -191,79 +131,56 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session.id === result.gameSessionId 
           ? { 
               ...session, 
-              matches: [...session.matches, newResult.id], // Push match ID instead of the entire match object
+              matches: [...session.matches, newResult.id],
               lastPlayed: new Date().toISOString()
             } 
           : session
       )
     );
 
-    return newResult;
-  };
-
-  const confirmMatchResult = (matchId: string, playerId: string) => {
-    const updatedResults = matchResults.map(match => {
-      if (match.id === matchId) {
-        const isPlayer1 = match.player1.id === playerId;
-        const updatedMatch = {
-          ...match,
-          player1Confirmed: isPlayer1 ? true : match.player1Confirmed,
-          player2Confirmed: !isPlayer1 ? true : match.player2Confirmed,
+    // Update player stats immediately since we're removing confirmation
+    const player1Won = newResult.player1Score > newResult.player2Score;
+    const player2Won = newResult.player2Score > newResult.player1Score;
+    const goalDifference = newResult.player1Score - newResult.player2Score;
+    
+    setPlayers(prev => prev.map(player => {
+      if (player.id === result.player1.id) {
+        const wins = player1Won ? player.wins + 1 : player.wins;
+        const losses = player2Won ? player.losses + 1 : player.losses;
+        const matchesPlayed = player.matchesPlayed + 1;
+        return {
+          ...player,
+          wins,
+          losses,
+          goalDifference: player.goalDifference + goalDifference,
+          matchesPlayed,
+          winRate: wins / matchesPlayed
         };
-
-        // If both players confirmed, lock the result and update player stats
-        if (updatedMatch.player1Confirmed && updatedMatch.player2Confirmed) {
-          updatedMatch.isLocked = true;
-          
-          // Update player stats
-          const player1Won = updatedMatch.player1Score > updatedMatch.player2Score;
-          const player2Won = updatedMatch.player2Score > updatedMatch.player1Score;
-          const goalDifference = updatedMatch.player1Score - updatedMatch.player2Score;
-          
-          setPlayers(prev => prev.map(player => {
-            if (player.id === match.player1.id) {
-              const wins = player1Won ? player.wins + 1 : player.wins;
-              const losses = player2Won ? player.losses + 1 : player.losses;
-              const matchesPlayed = player.matchesPlayed + 1;
-              return {
-                ...player,
-                wins,
-                losses,
-                goalDifference: player.goalDifference + goalDifference,
-                matchesPlayed,
-                winRate: wins / matchesPlayed
-              };
-            } else if (player.id === match.player2.id) {
-              const wins = player2Won ? player.wins + 1 : player.wins;
-              const losses = player1Won ? player.losses + 1 : player.losses;
-              const matchesPlayed = player.matchesPlayed + 1;
-              return {
-                ...player,
-                wins,
-                losses,
-                goalDifference: player.goalDifference - goalDifference,
-                matchesPlayed,
-                winRate: wins / matchesPlayed
-              };
-            }
-            return player;
-          }));
-
-          // Add notification that match is confirmed
-          addNotification({
-            type: 'system',
-            title: 'Match Confirmed',
-            message: `The match result between ${match.player1.name} and ${match.player2.name} has been confirmed and added to the leaderboard.`,
-            matchId: match.id
-          });
-        }
-
-        return updatedMatch;
+      } else if (player.id === result.player2.id) {
+        const wins = player2Won ? player.wins + 1 : player.wins;
+        const losses = player1Won ? player.losses + 1 : player.losses;
+        const matchesPlayed = player.matchesPlayed + 1;
+        return {
+          ...player,
+          wins,
+          losses,
+          goalDifference: player.goalDifference - goalDifference,
+          matchesPlayed,
+          winRate: wins / matchesPlayed
+        };
       }
-      return match;
+      return player;
+    }));
+
+    // Add notification for match result
+    addNotification({
+      type: 'system',
+      title: 'Match Result Added',
+      message: `Match result between ${result.player1.name} and ${result.player2.name} has been added to the leaderboard.`,
+      matchId: newResult.id
     });
 
-    setMatchResults(updatedResults);
+    return newResult;
   };
 
   const getPlayer = (id: string) => {
@@ -306,7 +223,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentGameSession,
       createGameSession,
       addMatchResult,
-      confirmMatchResult,
       getPlayer,
       markNotificationAsRead,
       addNotification

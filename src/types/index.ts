@@ -20,15 +20,13 @@ export interface MatchResult {
   player2Score: number;
   date: string;
   time: string;
-  player1Confirmed: boolean;
-  player2Confirmed: boolean;
   isLocked: boolean;
 }
 
 export interface GameSession {
   id: string;
   name: string;
-  matches: string[]; // Changed from MatchResult[] to string[] to store match IDs
+  matches: string[];
   lastPlayed: string;
 }
 

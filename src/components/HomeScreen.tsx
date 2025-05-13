@@ -27,14 +27,14 @@ const HomeScreen: React.FC = () => {
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-fifa-blue flex items-center justify-center text-white">1</div>
               <div>
-                <p className="font-medium">Start a new game and add players to track your FIFA matches</p>
+                <p className="font-medium">Add players to track your FIFA matches</p>
               </div>
             </div>
             
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-fifa-blue flex items-center justify-center text-white">2</div>
               <div>
-                <p className="font-medium">Both players must confirm scores to ensure fair play</p>
+                <p className="font-medium">Record your FIFA match scores</p>
               </div>
             </div>
             
@@ -48,9 +48,9 @@ const HomeScreen: React.FC = () => {
           
           <Button 
             className="w-full mt-6 fifa-button"
-            onClick={() => navigate('/new-game')}
+            onClick={() => navigate('/add-players')}
           >
-            Get Started
+            Add Score
           </Button>
         </div>
       </div>
@@ -102,7 +102,7 @@ const HomeScreen: React.FC = () => {
       <div className="mt-8">
         <div className="rounded-lg border p-3 text-sm flex items-center gap-2 bg-blue-50 text-blue-700">
           <Check className="h-4 w-4" />
-          <p>Scores are confirmed by both players and locked in the global leaderboard</p>
+          <p>Scores are automatically added to the global leaderboard</p>
         </div>
       </div>
       

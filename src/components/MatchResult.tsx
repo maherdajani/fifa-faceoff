@@ -4,14 +4,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useGame } from '@/context/GameContext';
-import { ArrowLeft, Check, Home } from "lucide-react";
+import { ArrowLeft, Home } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 
 const MatchResult: React.FC = () => {
   const location = useLocation();
   const { matchId } = location.state || { matchId: null };
-  const { matchResults, confirmMatchResult } = useGame();
+  const { matchResults } = useGame();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -50,10 +50,6 @@ const MatchResult: React.FC = () => {
       </div>
     );
   }
-
-  const handleConfirm = (playerId: string) => {
-    confirmMatchResult(match.id, playerId);
-  };
 
   const getInitials = (name: string) => {
     return name?.charAt(0)?.toUpperCase() || '';
@@ -128,63 +124,10 @@ const MatchResult: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-100 rounded-md p-4 mb-4">
-          <h3 className="font-medium mb-1">Confirmation Status</h3>
-          
-          <div className="space-y-2 mt-3">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <Avatar className="h-6 w-6 mr-2">
-                  <AvatarFallback className="text-xs bg-fifa-blue text-white">
-                    {getInitials(match.player1?.name || '')}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm">{match.player1?.name}</span>
-              </div>
-              {match.player1Confirmed ? (
-                <Badge className="bg-green-100 hover:bg-green-100 text-green-800 border-green-200">
-                  <Check className="h-3 w-3 mr-1" /> Confirmed
-                </Badge>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => handleConfirm(match.player1?.id || '')}
-                >
-                  Confirm
-                </Button>
-              )}
-            </div>
-
-            <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <Avatar className="h-6 w-6 mr-2">
-                  <AvatarFallback className="text-xs bg-fifa-blue text-white">
-                    {getInitials(match.player2?.name || '')}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm">{match.player2?.name}</span>
-              </div>
-              {match.player2Confirmed ? (
-                <Badge className="bg-green-100 hover:bg-green-100 text-green-800 border-green-200">
-                  <Check className="h-3 w-3 mr-1" /> Confirmed
-                </Badge>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => handleConfirm(match.player2?.id || '')}
-                >
-                  Confirm
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <p className="text-xs mt-4 text-muted-foreground">
-            Once both players confirm, the result will be locked and added to the global leaderboard.
+        <div className="bg-green-50 border border-green-100 rounded-md p-4 mb-4">
+          <h3 className="font-medium mb-1">Match Status</h3>
+          <p className="text-sm text-green-700">
+            This match has been recorded and added to the leaderboard.
           </p>
         </div>
 
@@ -199,33 +142,6 @@ const MatchResult: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {!match.isLocked && (
-        <div className="fifa-card mb-6">
-          <h3 className="text-lg font-medium mb-2">Confirmation Required</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Please confirm the score for this match. Once confirmed, the score cannot be changed.
-          </p>
-          
-          {!match.player1Confirmed && match.player1?.id && (
-            <Button
-              className="w-full mb-4"
-              onClick={() => handleConfirm(match.player1.id)}
-            >
-              Confirm as {match.player1.name}
-            </Button>
-          )}
-          
-          {!match.player2Confirmed && match.player2?.id && (
-            <Button
-              className="w-full"
-              onClick={() => handleConfirm(match.player2.id)}
-            >
-              Confirm as {match.player2.name}
-            </Button>
-          )}
-        </div>
-      )}
 
       <div className="flex justify-center">
         <Button 
