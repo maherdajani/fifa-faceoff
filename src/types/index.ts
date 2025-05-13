@@ -28,7 +28,7 @@ export interface MatchResult {
 export interface GameSession {
   id: string;
   name: string;
-  matches: MatchResult[];
+  matches: string[]; // Changed from MatchResult[] to string[] to store match IDs
   lastPlayed: string;
 }
 

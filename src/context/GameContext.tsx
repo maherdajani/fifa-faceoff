@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Player, MatchResult, GameSession, Notification } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
@@ -152,7 +151,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newSession: GameSession = {
       id: Date.now().toString(),
       name,
-      matches: [],
+      matches: [], // This is correctly typed as string[]
       lastPlayed: new Date().toISOString()
     };
 
@@ -186,13 +185,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       matchId: newResult.id
     });
 
-    // Update game session with new match
+    // Update game session with new match ID
     setGameSessions(prev => 
       prev.map(session => 
         session.id === result.gameSessionId 
           ? { 
               ...session, 
-              matches: [...session.matches, newResult.id],
+              matches: [...session.matches, newResult.id], // Push match ID instead of the entire match object
               lastPlayed: new Date().toISOString()
             } 
           : session
