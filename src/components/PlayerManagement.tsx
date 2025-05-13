@@ -8,13 +8,16 @@ import { Check, ArrowLeft, ArrowRight, Search, User, Camera } from "lucide-react
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from '@/components/ui/badge';
 import { Player } from '@/types';
+import { useToast } from "@/hooks/use-toast";
 
 const PlayerManagement: React.FC = () => {
   const [playerName, setPlayerName] = useState('');
+  const [playerPhoto, setPlayerPhoto] = useState<string | null>(null);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const { players, addPlayer, currentGameSession } = useGame();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const filteredPlayers = players.filter(player => 
     player.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -25,9 +28,17 @@ const PlayerManagement: React.FC = () => {
     if (!playerName.trim()) return;
     
     try {
-      const newPlayer = await addPlayer({ name: playerName });
+      const newPlayer = await addPlayer({ 
+        name: playerName,
+        photoUrl: playerPhoto || undefined
+      });
       setSelectedPlayers([...selectedPlayers, newPlayer]);
       setPlayerName('');
+      setPlayerPhoto(null);
+      toast({
+        title: "Player Added",
+        description: `${playerName} has been added successfully.`
+      });
     } catch (error) {
       console.error("Failed to add player:", error);
     }
@@ -52,6 +63,18 @@ const PlayerManagement: React.FC = () => {
     return name.charAt(0).toUpperCase();
   };
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const fileReader = new FileReader();
+      fileReader.onload = (event) => {
+        if (event.target?.result) {
+          setPlayerPhoto(event.target.result as string);
+        }
+      };
+      fileReader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
   return (
     <div className="container max-w-md mx-auto px-4 py-8">
       <div className="flex items-center mb-6">
@@ -59,7 +82,7 @@ const PlayerManagement: React.FC = () => {
           variant="ghost" 
           size="sm" 
           className="mr-2"
-          onClick={() => navigate('/new-game')}
+          onClick={() => navigate('/')}
         >
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
@@ -112,30 +135,6 @@ const PlayerManagement: React.FC = () => {
               </div>
             )}
           </div>
-          
-          <div className="flex border-t px-3 py-2 justify-around">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs"
-            >
-              Contacts
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs"
-            >
-              Email
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs"
-            >
-              Share
-            </Button>
-          </div>
         </div>
       </div>
       
@@ -179,36 +178,65 @@ const PlayerManagement: React.FC = () => {
           </div>
         )}
 
-        <div className="flex gap-2">
-          <Input
-            placeholder="Enter player name"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            className="flex-1"
-          />
-          <Button 
-            onClick={handleAddPlayer}
-            disabled={!playerName.trim()}
-          >
-            Add
-          </Button>
+        <div className="space-y-4">
+          {playerPhoto && (
+            <div className="flex justify-center mb-2">
+              <Avatar className="h-20 w-20">
+                <img src={playerPhoto} alt="Player preview" />
+              </Avatar>
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter player name"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              className="flex-1"
+            />
+            <Button 
+              onClick={handleAddPlayer}
+              disabled={!playerName.trim()}
+            >
+              Add
+            </Button>
+          </div>
         </div>
 
         <div className="flex justify-between mt-6">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-xs"
-          >
-            <User className="h-3 w-3 mr-1" /> Upload Photo
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-xs"
-          >
-            <Camera className="h-3 w-3 mr-1" /> Take Photo
-          </Button>
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs"
+              type="button"
+            >
+              <User className="h-3 w-3 mr-1" /> Upload Photo
+            </Button>
+          </label>
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs"
+              type="button"
+            >
+              <Camera className="h-3 w-3 mr-1" /> Take Photo
+            </Button>
+          </label>
         </div>
 
         <div className="mt-4">

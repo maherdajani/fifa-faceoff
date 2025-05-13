@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Trophy, Clock } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -12,45 +13,26 @@ const HomeScreen: React.FC = () => {
     <div className="container max-w-3xl mx-auto px-4 py-8">
       <div className="fifa-card mb-8">
         <div className="flex flex-col items-center justify-center py-6">
-          <div className="w-16 h-16 rounded-full bg-fifa-blue flex items-center justify-center mb-4">
-            <Check className="h-8 w-8 text-white" />
-          </div>
           <h1 className="text-3xl font-bold text-fifa-dark">FIFA Score Tracker</h1>
-          <p className="text-muted-foreground mt-2">Track your FIFA challenges globally</p>
+          <p className="text-muted-foreground mt-2">Track your FIFA challenges</p>
         </div>
 
-        <div className="fifa-card bg-white p-6 my-4">
-          <h2 className="text-xl font-bold mb-4 text-center">Welcome to FIFA Score Tracker!</h2>
-          <p className="text-center text-muted-foreground mb-4">Let's get you started with a quick tour</p>
-          
-          <div className="space-y-4 mt-6">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-fifa-blue flex items-center justify-center text-white">1</div>
-              <div>
-                <p className="font-medium">Add players to track your FIFA matches</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-fifa-blue flex items-center justify-center text-white">2</div>
-              <div>
-                <p className="font-medium">Record your FIFA match scores</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-fifa-blue flex items-center justify-center text-white">3</div>
-              <div>
-                <p className="font-medium">Track your progress on the global leaderboard</p>
-              </div>
-            </div>
-          </div>
-          
+        <div className="text-center my-4">
+          <AspectRatio ratio={16/9} className="bg-black/5 rounded-md overflow-hidden mb-4">
+            <img 
+              src="/lovable-uploads/9935447e-9e1d-4a69-87da-5621e193119f.png" 
+              alt="FIFA World Cup Trophy" 
+              className="object-contain h-full w-full"
+            />
+          </AspectRatio>
+        </div>
+
+        <div className="flex justify-center my-6">
           <Button 
-            className="w-full mt-6 fifa-button"
+            className="w-full max-w-xs h-16 text-lg fifa-button"
             onClick={() => navigate('/add-players')}
           >
-            Add Score
+            <Trophy className="h-6 w-6 mr-2" /> Add Score
           </Button>
         </div>
       </div>
