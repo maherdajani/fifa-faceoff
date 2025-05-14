@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ interface PlayerMatchup {
 const PastGamesView: React.FC = () => {
   const { gameSessions, matchResults, players } = useGame();
   const navigate = useNavigate();
-  const [selectedPlayer, setSelectedPlayer] = useState<string>("");
+  const [selectedPlayer, setSelectedPlayer] = useState<string>("all");
 
   const getInitials = (name: string) => {
     return name.charAt(0).toUpperCase();
@@ -48,7 +49,7 @@ const PastGamesView: React.FC = () => {
     const matchups: PlayerMatchup[] = [];
     
     // If a specific player is selected, only show their matchups
-    if (selectedPlayer) {
+    if (selectedPlayer && selectedPlayer !== "all") {
       const selectedPlayerObj = players.find(p => p.id === selectedPlayer);
       
       if (!selectedPlayerObj) return [];
@@ -180,7 +181,7 @@ const PastGamesView: React.FC = () => {
                   <SelectValue placeholder="Filter by player" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All players</SelectItem>
+                  <SelectItem value="all">All players</SelectItem>
                   {players.map(player => (
                     <SelectItem key={player.id} value={player.id}>{player.name}</SelectItem>
                   ))}
@@ -188,11 +189,11 @@ const PastGamesView: React.FC = () => {
               </Select>
             </div>
             
-            {selectedPlayer && (
+            {selectedPlayer && selectedPlayer !== "all" && (
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setSelectedPlayer("")}
+                onClick={() => setSelectedPlayer("all")}
                 className="mb-4"
               >
                 Clear Filter
@@ -251,7 +252,7 @@ const PastGamesView: React.FC = () => {
                       <Trophy className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
                       <h3 className="text-lg font-medium mb-1">No Matchups Found</h3>
                       <p className="text-sm text-muted-foreground">
-                        {selectedPlayer ? "No matches found for this player" : "Start playing to see player matchups"}
+                        {selectedPlayer && selectedPlayer !== "all" ? "No matches found for this player" : "Start playing to see player matchups"}
                       </p>
                     </TableCell>
                   </TableRow>
