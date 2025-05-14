@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { useGame } from '@/context/GameContext';
 import { Check, ArrowLeft, ArrowRight, User, Camera } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from '@/components/ui/badge';
 import { Player } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 
@@ -82,14 +81,8 @@ const PlayerManagement: React.FC = () => {
         >
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
-        <h1 className="text-xl font-bold flex-1">Add Players</h1>
+        <h1 className="text-xl font-bold flex-1">Select Players</h1>
       </div>
-
-      {currentGameSession && (
-        <Badge variant="outline" className="mb-4">
-          {currentGameSession.name}
-        </Badge>
-      )}
       
       <div className="fifa-card mb-6">
         <h2 className="text-lg font-medium mb-4">Players</h2>

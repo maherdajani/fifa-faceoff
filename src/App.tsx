@@ -8,7 +8,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GameProvider } from "@/context/GameContext";
 import Index from "./pages/Index";
 import HomeScreen from "./components/HomeScreen";
-import GameCreation from "./components/GameCreation";
 import PlayerManagement from "./components/PlayerManagement";
 import MatchSetup from "./components/MatchSetup";
 import MatchResult from "./components/MatchResult";
@@ -30,7 +29,6 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<HomeScreen />} />
-              <Route path="/new-game" element={<GameCreation />} />
               <Route path="/add-players" element={<PlayerManagement />} />
               <Route path="/match-setup" element={<MatchSetup />} />
               <Route path="/match-result" element={<MatchResult />} />

@@ -36,7 +36,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const loadedNotifications = localStorage.getItem("notifications");
 
     if (loadedPlayers) setPlayers(JSON.parse(loadedPlayers));
-    if (loadedGameSessions) setGameSessions(JSON.parse(loadedGameSessions));
+    if (loadedGameSessions) {
+      const parsedSessions = JSON.parse(loadedGameSessions);
+      setGameSessions(parsedSessions);
+      
+      // Set current game session to FIFA session
+      const fifaSession = parsedSessions.find((s: GameSession) => s.name === "FIFA");
+      if (fifaSession) {
+        setCurrentGameSession(fifaSession);
+      }
+    }
     if (loadedMatchResults) setMatchResults(JSON.parse(loadedMatchResults));
     if (loadedNotifications) setNotifications(JSON.parse(loadedNotifications));
 
@@ -49,6 +58,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastPlayed: new Date().toISOString()
       };
       setGameSessions([defaultSession]);
+      setCurrentGameSession(defaultSession);
       localStorage.setItem("gameSessions", JSON.stringify([defaultSession]));
     }
   }, []);
