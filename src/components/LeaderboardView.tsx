@@ -8,15 +8,43 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Player } from '@/types';
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const LeaderboardView: React.FC = () => {
-  const { players } = useGame();
+  const { players, matchResults } = useGame();
   const navigate = useNavigate();
-  const [sortBy, setSortBy] = useState<'wins' | 'winRate' | 'matches'>('wins');
+  const [sortBy, setSortBy] = useState<'wins' | 'winRate' | 'matches' | 'goalsScored'>('wins');
 
-  const sortedPlayers = [...players].sort((a, b) => {
+  // Calculate additional stats for each player
+  const playersWithStats = players.map(player => {
+    const playerMatches = matchResults.filter(match => 
+      match.player1.id === player.id || match.player2.id === player.id
+    );
+    
+    let goalsScored = 0;
+    let goalsConceded = 0;
+    
+    playerMatches.forEach(match => {
+      if (match.player1.id === player.id) {
+        goalsScored += match.player1Score;
+        goalsConceded += match.player2Score;
+      } else {
+        goalsScored += match.player2Score;
+        goalsConceded += match.player1Score;
+      }
+    });
+    
+    return {
+      ...player,
+      goalsScored,
+      goalsConceded
+    };
+  });
+
+  const sortedPlayers = [...playersWithStats].sort((a, b) => {
     if (sortBy === 'wins') return b.wins - a.wins;
     if (sortBy === 'winRate') return b.winRate - a.winRate;
+    if (sortBy === 'goalsScored') return b.goalsScored - a.goalsScored;
     return b.matchesPlayed - a.matchesPlayed;
   });
 
@@ -50,92 +78,173 @@ const LeaderboardView: React.FC = () => {
           if (value === 'most-wins') setSortBy('wins');
           if (value === 'best-rate') setSortBy('winRate');
           if (value === 'most-matches') setSortBy('matches');
+          if (value === 'goals-scored') setSortBy('goalsScored');
         }}>
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="most-wins">Most Wins</TabsTrigger>
-            <TabsTrigger value="best-rate">Best Win Rate</TabsTrigger>
-            <TabsTrigger value="most-matches">Most Matches</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsTrigger value="most-wins">Wins</TabsTrigger>
+            <TabsTrigger value="best-rate">Win Rate</TabsTrigger>
+            <TabsTrigger value="goals-scored">Goals</TabsTrigger>
+            <TabsTrigger value="most-matches">Matches</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="most-wins" className="space-y-4">
-            {sortedPlayers.map((player, index) => (
-              <div key={player.id} className="flex items-center p-3 bg-white rounded-lg border border-slate-100">
-                <div className={`w-8 h-8 ${getMedalColor(index)} rounded-full flex items-center justify-center text-white font-bold mr-3`}>
-                  {index + 1}
-                </div>
-                <Avatar className="h-10 w-10 mr-3">
-                  {player.photoUrl ? (
-                    <img src={player.photoUrl} alt={player.name} />
-                  ) : (
-                    <AvatarFallback className="text-sm bg-fifa-blue text-white">
-                      {getInitials(player.name)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="flex-1">
-                  <div className="font-medium">{player.name}</div>
-                  <div className="text-xs text-muted-foreground">{player.matchesPlayed} matches</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold">{player.wins} wins</div>
-                  <div className="text-xs text-green-600">{Math.round(player.winRate * 100)}% win rate</div>
-                </div>
-              </div>
-            ))}
+          <TabsContent value="most-wins">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Player</TableHead>
+                  <TableHead className="text-right">W</TableHead>
+                  <TableHead className="text-right">L</TableHead>
+                  <TableHead className="text-right">Win %</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedPlayers.map((player, index) => (
+                  <TableRow key={player.id}>
+                    <TableCell>
+                      <div className={`w-8 h-8 ${getMedalColor(index)} rounded-full flex items-center justify-center text-white font-bold`}>
+                        {index + 1}
+                      </div>
+                    </TableCell>
+                    <TableCell className="flex items-center">
+                      <Avatar className="h-8 w-8 mr-2">
+                        {player.photoUrl ? (
+                          <img src={player.photoUrl} alt={player.name} />
+                        ) : (
+                          <AvatarFallback className="text-sm bg-fifa-blue text-white">
+                            {getInitials(player.name)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <span>{player.name}</span>
+                    </TableCell>
+                    <TableCell className="text-right font-bold">{player.wins}</TableCell>
+                    <TableCell className="text-right">{player.losses}</TableCell>
+                    <TableCell className="text-right">{Math.round(player.winRate * 100)}%</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </TabsContent>
 
-          <TabsContent value="best-rate" className="space-y-4">
-            {sortedPlayers.map((player, index) => (
-              <div key={player.id} className="flex items-center p-3 bg-white rounded-lg border border-slate-100">
-                <div className={`w-8 h-8 ${getMedalColor(index)} rounded-full flex items-center justify-center text-white font-bold mr-3`}>
-                  {index + 1}
-                </div>
-                <Avatar className="h-10 w-10 mr-3">
-                  {player.photoUrl ? (
-                    <img src={player.photoUrl} alt={player.name} />
-                  ) : (
-                    <AvatarFallback className="text-sm bg-fifa-blue text-white">
-                      {getInitials(player.name)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="flex-1">
-                  <div className="font-medium">{player.name}</div>
-                  <div className="text-xs text-muted-foreground">{player.matchesPlayed} matches</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold">{Math.round(player.winRate * 100)}%</div>
-                  <div className="text-xs">{player.wins} wins</div>
-                </div>
-              </div>
-            ))}
+          <TabsContent value="best-rate">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Player</TableHead>
+                  <TableHead className="text-right">Win %</TableHead>
+                  <TableHead className="text-right">W</TableHead>
+                  <TableHead className="text-right">L</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedPlayers.map((player, index) => (
+                  <TableRow key={player.id}>
+                    <TableCell>
+                      <div className={`w-8 h-8 ${getMedalColor(index)} rounded-full flex items-center justify-center text-white font-bold`}>
+                        {index + 1}
+                      </div>
+                    </TableCell>
+                    <TableCell className="flex items-center">
+                      <Avatar className="h-8 w-8 mr-2">
+                        {player.photoUrl ? (
+                          <img src={player.photoUrl} alt={player.name} />
+                        ) : (
+                          <AvatarFallback className="text-sm bg-fifa-blue text-white">
+                            {getInitials(player.name)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <span>{player.name}</span>
+                    </TableCell>
+                    <TableCell className="text-right font-bold">{Math.round(player.winRate * 100)}%</TableCell>
+                    <TableCell className="text-right">{player.wins}</TableCell>
+                    <TableCell className="text-right">{player.losses}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </TabsContent>
 
-          <TabsContent value="most-matches" className="space-y-4">
-            {sortedPlayers.map((player, index) => (
-              <div key={player.id} className="flex items-center p-3 bg-white rounded-lg border border-slate-100">
-                <div className={`w-8 h-8 ${getMedalColor(index)} rounded-full flex items-center justify-center text-white font-bold mr-3`}>
-                  {index + 1}
-                </div>
-                <Avatar className="h-10 w-10 mr-3">
-                  {player.photoUrl ? (
-                    <img src={player.photoUrl} alt={player.name} />
-                  ) : (
-                    <AvatarFallback className="text-sm bg-fifa-blue text-white">
-                      {getInitials(player.name)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div className="flex-1">
-                  <div className="font-medium">{player.name}</div>
-                  <div className="text-xs text-green-600">{Math.round(player.winRate * 100)}% win rate</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold">{player.matchesPlayed} matches</div>
-                  <div className="text-xs">{player.wins} wins</div>
-                </div>
-              </div>
-            ))}
+          <TabsContent value="goals-scored">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Player</TableHead>
+                  <TableHead className="text-right">GF</TableHead>
+                  <TableHead className="text-right">GA</TableHead>
+                  <TableHead className="text-right">GD</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedPlayers.map((player, index) => (
+                  <TableRow key={player.id}>
+                    <TableCell>
+                      <div className={`w-8 h-8 ${getMedalColor(index)} rounded-full flex items-center justify-center text-white font-bold`}>
+                        {index + 1}
+                      </div>
+                    </TableCell>
+                    <TableCell className="flex items-center">
+                      <Avatar className="h-8 w-8 mr-2">
+                        {player.photoUrl ? (
+                          <img src={player.photoUrl} alt={player.name} />
+                        ) : (
+                          <AvatarFallback className="text-sm bg-fifa-blue text-white">
+                            {getInitials(player.name)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <span>{player.name}</span>
+                    </TableCell>
+                    <TableCell className="text-right font-bold">{player.goalsScored}</TableCell>
+                    <TableCell className="text-right">{player.goalsConceded}</TableCell>
+                    <TableCell className="text-right">{player.goalDifference}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TabsContent>
+
+          <TabsContent value="most-matches">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>Player</TableHead>
+                  <TableHead className="text-right">Matches</TableHead>
+                  <TableHead className="text-right">W</TableHead>
+                  <TableHead className="text-right">L</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedPlayers.map((player, index) => (
+                  <TableRow key={player.id}>
+                    <TableCell>
+                      <div className={`w-8 h-8 ${getMedalColor(index)} rounded-full flex items-center justify-center text-white font-bold`}>
+                        {index + 1}
+                      </div>
+                    </TableCell>
+                    <TableCell className="flex items-center">
+                      <Avatar className="h-8 w-8 mr-2">
+                        {player.photoUrl ? (
+                          <img src={player.photoUrl} alt={player.name} />
+                        ) : (
+                          <AvatarFallback className="text-sm bg-fifa-blue text-white">
+                            {getInitials(player.name)}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <span>{player.name}</span>
+                    </TableCell>
+                    <TableCell className="text-right font-bold">{player.matchesPlayed}</TableCell>
+                    <TableCell className="text-right">{player.wins}</TableCell>
+                    <TableCell className="text-right">{player.losses}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </TabsContent>
         </Tabs>
 

@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Player } from '@/types';
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const MatchSetup: React.FC = () => {
   const location = useLocation();
@@ -29,7 +30,7 @@ const MatchSetup: React.FC = () => {
     player2Score?: string;
   }>({});
 
-  const { currentGameSession, addMatchResult } = useGame();
+  const { currentGameSession, addMatchResult, players } = useGame();
 
   useEffect(() => {
     if (!currentGameSession) {
@@ -100,6 +101,28 @@ const MatchSetup: React.FC = () => {
     return name?.charAt(0)?.toUpperCase() || '';
   };
 
+  const handleSelectPlayer1 = (playerId: string) => {
+    const selected = players.find(p => p.id === playerId);
+    if (selected) {
+      setPlayer1(selected);
+      // If same player selected for both positions, clear player2
+      if (player2 && player2.id === playerId) {
+        setPlayer2(null);
+      }
+    }
+  };
+
+  const handleSelectPlayer2 = (playerId: string) => {
+    const selected = players.find(p => p.id === playerId);
+    if (selected) {
+      setPlayer2(selected);
+      // If same player selected for both positions, clear player1
+      if (player1 && player1.id === playerId) {
+        setPlayer1(null);
+      }
+    }
+  };
+
   return (
     <div className="container max-w-md mx-auto px-4 py-8">
       <div className="flex items-center mb-6">
@@ -107,7 +130,7 @@ const MatchSetup: React.FC = () => {
           variant="ghost" 
           size="sm" 
           className="mr-2"
-          onClick={() => navigate('/add-players')}
+          onClick={() => navigate('/')}
         >
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
@@ -122,43 +145,88 @@ const MatchSetup: React.FC = () => {
       
       {!showScoreForm ? (
         <div className="fifa-card mb-6">
-          <h2 className="text-lg font-medium mb-4">Players</h2>
+          <h2 className="text-lg font-medium mb-4">Select Players</h2>
           
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex flex-col items-center">
-              <Avatar className="h-16 w-16 mb-2">
-                {player1?.photoUrl ? (
-                  <img src={player1.photoUrl} alt={player1.name} />
-                ) : (
-                  <AvatarFallback className="text-xl bg-fifa-blue text-white">
-                    {player1 ? getInitials(player1.name) : 'P1'}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <span className="text-sm">{player1?.name || "Player 1"}</span>
+          <div className="flex flex-col space-y-6 mb-8">
+            <div className="space-y-2">
+              <Label htmlFor="player1">Player 1</Label>
+              <Select
+                value={player1?.id || ""}
+                onValueChange={handleSelectPlayer1}
+              >
+                <SelectTrigger id="player1">
+                  <SelectValue placeholder="Select player 1" />
+                </SelectTrigger>
+                <SelectContent>
+                  {players.map(player => (
+                    <SelectItem 
+                      key={player.id} 
+                      value={player.id}
+                      disabled={player2?.id === player.id}
+                    >
+                      <div className="flex items-center">
+                        <Avatar className="h-6 w-6 mr-2">
+                          {player.photoUrl ? (
+                            <img src={player.photoUrl} alt={player.name} />
+                          ) : (
+                            <AvatarFallback className="text-xs bg-fifa-blue text-white">
+                              {getInitials(player.name)}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        {player.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="vs-badge">
-              vs
+            <div className="flex items-center justify-center">
+              <div className="vs-badge">
+                vs
+              </div>
             </div>
 
-            <div className="flex flex-col items-center">
-              <Avatar className="h-16 w-16 mb-2">
-                {player2?.photoUrl ? (
-                  <img src={player2.photoUrl} alt={player2.name} />
-                ) : (
-                  <AvatarFallback className="text-xl bg-fifa-blue text-white">
-                    {player2 ? getInitials(player2.name) : 'P2'}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <span className="text-sm">{player2?.name || "Player 2"}</span>
+            <div className="space-y-2">
+              <Label htmlFor="player2">Player 2</Label>
+              <Select
+                value={player2?.id || ""}
+                onValueChange={handleSelectPlayer2}
+              >
+                <SelectTrigger id="player2">
+                  <SelectValue placeholder="Select player 2" />
+                </SelectTrigger>
+                <SelectContent>
+                  {players.map(player => (
+                    <SelectItem 
+                      key={player.id} 
+                      value={player.id}
+                      disabled={player1?.id === player.id}
+                    >
+                      <div className="flex items-center">
+                        <Avatar className="h-6 w-6 mr-2">
+                          {player.photoUrl ? (
+                            <img src={player.photoUrl} alt={player.name} />
+                          ) : (
+                            <AvatarFallback className="text-xs bg-fifa-blue text-white">
+                              {getInitials(player.name)}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                        {player.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           <Button 
             onClick={handleToggleScoreForm}
             className="w-full"
+            disabled={!player1 || !player2}
           >
             Record Score <Trophy className="ml-2 h-4 w-4" />
           </Button>
@@ -262,9 +330,10 @@ const MatchSetup: React.FC = () => {
         ) : (
           <Button
             variant="outline"
-            onClick={() => navigate('/add-players')}
+            onClick={() => navigate('/')}
+            className="mr-2"
           >
-            Change Players
+            Cancel
           </Button>
         )}
       </div>
