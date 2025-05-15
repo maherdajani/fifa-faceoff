@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
+  const basePath = import.meta.env.MODE === 'development' ? '' : '/fifa-faceoff';
 
   return (
     <div className="container max-w-3xl mx-auto px-4 py-8">
@@ -20,7 +20,7 @@ const HomeScreen: React.FC = () => {
         <div className="text-center my-4">
           <AspectRatio ratio={16/9} className="bg-black/5 rounded-md overflow-hidden mb-4">
             <img 
-              src="/lovable-uploads/9935447e-9e1d-4a69-87da-5621e193119f.png" 
+              src={`${basePath}/lovable-uploads/9935447e-9e1d-4a69-87da-5621e193119f.png`}
               alt="FIFA World Cup Trophy" 
               className="object-contain h-full w-full"
             />
