@@ -5,16 +5,20 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  base: '/fifa-faceoff/',
+export default defineConfig({
+  base: '/',
   server: {
     host: "::",
     port: 8080,
   },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: true,
+  },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    process.env.NODE_ENV === 'development' && componentTagger(),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
@@ -28,17 +32,17 @@ export default defineConfig(({ mode }) => ({
         theme_color: '#4F46E5',
         background_color: '#ffffff',
         display: 'standalone',
-        scope: '/fifa-faceoff/',
-        start_url: '/fifa-faceoff/',
+        scope: '/',
+        start_url: '/',
         orientation: 'portrait',
         icons: [
           {
-            src: 'logo192.png',
+            src: '/logo192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'logo512.png',
+            src: '/logo512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
@@ -89,21 +93,6 @@ export default defineConfig(({ mode }) => ({
                 maxAgeSeconds: 60 * 60 * 24 // 24 hours
               }
             }
-          },
-          {
-            urlPattern: /.*/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'dynamic-content',
-              networkTimeoutSeconds: 5,
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
           }
         ]
       }
@@ -114,4 +103,4 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+});
