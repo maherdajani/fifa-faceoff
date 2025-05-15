@@ -4,9 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  base: '/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'development' ? '/' : '/fifa-faceoff/',
   server: {
     host: "::",
     port: 8080,
@@ -14,7 +13,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
   },
   plugins: [
     react(),
@@ -32,8 +30,8 @@ export default defineConfig({
         theme_color: '#4F46E5',
         background_color: '#ffffff',
         display: 'standalone',
-        scope: '/',
-        start_url: '/',
+        scope: mode === 'development' ? '/' : '/fifa-faceoff/',
+        start_url: mode === 'development' ? '/' : '/fifa-faceoff/',
         orientation: 'portrait',
         icons: [
           {
@@ -103,4 +101,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+}));
