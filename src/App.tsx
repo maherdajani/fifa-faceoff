@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -26,7 +25,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter basename="/fifa-faceoff">
             <Routes>
               <Route path="/" element={<HomeScreen />} />
               <Route path="/add-players" element={<PlayerManagement />} />
