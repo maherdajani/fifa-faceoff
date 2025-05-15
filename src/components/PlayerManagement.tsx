@@ -181,8 +181,9 @@ const PlayerManagement: React.FC = () => {
           </div>
         )}
 
-        <div className="flex justify-between mt-6">
-          <label className="cursor-pointer">
+        {/* Photo upload buttons */}
+        <div className="flex gap-4 justify-center mt-6">
+          <label className="cursor-pointer flex-1">
             <input
               type="file"
               accept="image/*"
@@ -191,14 +192,13 @@ const PlayerManagement: React.FC = () => {
             />
             <Button 
               variant="outline" 
-              size="sm" 
-              className="text-xs"
+              className="w-full flex items-center justify-center gap-2"
               type="button"
             >
-              <User className="h-3 w-3 mr-1" /> Upload Photo
+              <User className="h-4 w-4" /> Upload Photo
             </Button>
           </label>
-          <label className="cursor-pointer">
+          <label className="cursor-pointer flex-1">
             <input
               type="file"
               accept="image/*"
@@ -208,18 +208,17 @@ const PlayerManagement: React.FC = () => {
             />
             <Button 
               variant="outline" 
-              size="sm" 
-              className="text-xs"
+              className="w-full flex items-center justify-center gap-2"
               type="button"
             >
-              <Camera className="h-3 w-3 mr-1" /> Take Photo
+              <Camera className="h-4 w-4" /> Take Photo
             </Button>
           </label>
         </div>
 
         <div className="mt-4">
-          <div className="auto-save-badge inline-flex">
-            <Check className="h-3 w-3" /> Progress auto-saved
+          <div className="auto-save-badge inline-flex items-center text-sm text-green-600">
+            <Check className="h-4 w-4 mr-1" /> Progress auto-saved
           </div>
         </div>
       </div>
