@@ -4,12 +4,15 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/fifa-faceoff/',
+  base: mode === 'development' ? '/' : '/fifa-faceoff/',
   server: {
     host: "::",
     port: 8080,
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
   },
   plugins: [
     react(),
@@ -28,8 +31,8 @@ export default defineConfig(({ mode }) => ({
         theme_color: '#4F46E5',
         background_color: '#ffffff',
         display: 'standalone',
-        scope: '/fifa-faceoff/',
-        start_url: '/fifa-faceoff/',
+        scope: mode === 'development' ? '/' : '/fifa-faceoff/',
+        start_url: mode === 'development' ? '/' : '/fifa-faceoff/',
         orientation: 'portrait',
         icons: [
           {
@@ -87,21 +90,6 @@ export default defineConfig(({ mode }) => ({
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              }
-            }
-          },
-          {
-            urlPattern: /.*/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'dynamic-content',
-              networkTimeoutSeconds: 5,
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
               }
             }
           }
